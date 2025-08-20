@@ -1,5 +1,6 @@
 # AnalyseDeFrequence3.py
 import operator
+import sys
 
 secret = """LRVMNIR BPR SUMVBWVR JX BPR LMIWV YJERYRKBI JX QMBM WI
 BPR XJVNI MKD YMIBRUT JX IRHX WI BPR RIIRKVR JX
@@ -25,6 +26,7 @@ class Attaque:
 		self.secret_chars_left = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 		self.freq = {}
 		self.mappings = {}
+		self.key = {}
 		self.freq_eng = {'A':0.08167, 'B':0.01492, 'C':0.02782, 'D':0.04253, 'E':0.12702, 'F':0.02228, 'G':0.02015, 'H':0.06094, 'I':0.06966, 'J':0.00153, 'K':0.00772, 'L':0.04025, 'M':0.02406, 'N':0.06749, 'O':0.07507, 'P':0.01929, 'Q':0.00095, 'R':0.05987, 'S':0.06327, 'T':0.09056, 'U':0.02758, 'V':0.00978, 'W':0.02360, 'X':0.00150, 'Y':0.01974, 'Z':0.00074} 
 
 	def	calculate_freq(self, secret):
@@ -58,14 +60,33 @@ class Attaque:
 			self.mappings[secret_char] = sorted(freq_map.items(), key=operator.itemgetter(1))
 
 	def	guess_key(self):
-		key = {}
 		for secret_char in self.secret_chars_left:
 			for plain_char, diff in self.mappings[secret_char]:
 				if plain_char in self.plain_chars_left:
-					key[secret_char] = plain_char
+					self.key[secret_char] = plain_char
 					self.plain_chars_left = self.plain_chars_left.replace(plain_char, '')
 					break
-		return key
+	
+	def	get_key(self):
+		return self.key
+
+	def	set_key_mapping(self, secret_char, plain_char):
+		if secret_char not in self.secret_chars_left or plain_char not in self.plain_chars_left:
+			print("Erreur de mappage de clés : ", secret_char, plain_char)
+			sys.exit(-1)
+		self.key[secret_char] = plain_char
+		self.plain_chars_left = self.plain_chars_left.replace(plain_char, '')
+		self.secret_chars_left = self.secret_chars_left.replace(secret_char, '')
+
+def	encrypt_decrypt(key, message):
+	secret = ""
+
+	for c in message.upper():
+		if c in key:
+			secret += key[c]
+		else:
+			secret += c
+	return secret
 
 pirate = Attaque()
 pirate.calculate_freq(secret)
@@ -74,5 +95,19 @@ pirate.calculate_matches()
 print()
 for c in pirate.mappings:
 	print(c, pirate.mappings[c])
-key = pirate.guess_key()
+pirate.set_key_mapping('R', 'E')
+pirate.set_key_mapping('B', 'T')
+pirate.set_key_mapping('M', 'A')
+pirate.set_key_mapping('P', 'H')
+pirate.set_key_mapping('V', 'C')
+pirate.guess_key()
+key = pirate.get_key()
+print()
 print(key)
+message = encrypt_decrypt(key, secret)
+#print(message)
+message_lines = message.splitlines()
+secret_lines = secret.splitlines()
+for i in range(len(message_lines)):
+	print('P:', message_lines[i])
+	print('C:', secret_lines[i])
